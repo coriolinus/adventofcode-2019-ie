@@ -68,16 +68,16 @@ impl Computer {
     /// Otherwise, leave it, for debugging purposes.
     pub(crate) fn step(&mut self) -> Result<()> {
         let instruction: Instruction = self.memory.ix(self.instruction_pointer)?.try_into()?;
-        let result = match instruction.opcode {
+        let next_ip = match instruction.opcode {
             Opcode::Add => {
                 let (a, b, out): (_, _, &mut _) = self.parameters(instruction.modes)?;
                 *out = a + b;
-                Ok(())
+                None
             }
             Opcode::Multiply => {
                 let (a, b, out): (_, _, &mut _) = self.parameters(instruction.modes)?;
                 *out = a * b;
-                Ok(())
+                None
             }
             Opcode::Input => {
                 let value = self
@@ -86,23 +86,45 @@ impl Computer {
                     .map_err(|_| Error::InputTimeout)?;
                 let store: &mut _ = self.parameters(instruction.modes)?;
                 *store = value;
-                Ok(())
+                None
             }
             Opcode::Output => {
                 let value = self.parameters(instruction.modes)?;
                 self.output_tx
                     .send_timeout(value, Self::CHANNEL_TIMEOUT)
                     .map_err(|_| Error::OutputTimeout)?;
-                Ok(())
+                None
             }
-            Opcode::Halt => Err(Error::Halt(self.instruction_pointer)),
+            Opcode::Halt => return Err(Error::Halt(self.instruction_pointer)),
+            Opcode::JumpIfTrue => {
+                let (test, target): (_, Word) = self.parameters(instruction.modes)?;
+                (test != 0).then_some(target.try_into().map_err(|_| Error::IndexFailed(target))?)
+            }
+            Opcode::JumpIfFalse => {
+                let (test, target): (_, Word) = self.parameters(instruction.modes)?;
+                (test == 0).then_some(target.try_into().map_err(|_| Error::IndexFailed(target))?)
+            }
+            Opcode::LessThan => {
+                let (a, b, out): (_, _, &mut _) = self.parameters(instruction.modes)?;
+                *out = if a < b { 1 } else { 0 };
+                None
+            }
+            Opcode::Equals => {
+                let (a, b, out): (_, _, &mut _) = self.parameters(instruction.modes)?;
+                *out = if a == b { 1 } else { 0 };
+                None
+            }
         };
 
-        if result.is_ok() {
-            self.instruction_pointer += 1 + instruction.opcode.parameter_count();
+        match next_ip {
+            Some(explicit) => self.instruction_pointer = explicit,
+            None => {
+                // implicit IP changes just go to the next thing after the current params are over
+                self.instruction_pointer += 1 + instruction.opcode.parameter_count();
+            }
         }
 
-        result
+        Ok(())
     }
 
     /// Execute the contained program until completion.

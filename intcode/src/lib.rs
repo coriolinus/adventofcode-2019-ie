@@ -43,4 +43,23 @@ mod tests {
         assert_eq!(out.len(), 1);
         assert_eq!(out[0], 123);
     }
+
+    #[test]
+    fn day05_example_part2() {
+        let example = [
+            3, 21, 1008, 21, 8, 20, 1005, 20, 22, 107, 8, 21, 20, 1006, 20, 31, 1106, 0, 36, 98, 0,
+            0, 1002, 21, 125, 20, 4, 20, 1105, 1, 46, 104, 999, 1105, 1, 46, 1101, 1000, 1, 20, 4,
+            20, 1105, 1, 46, 98, 99,
+        ];
+
+        for input in 0..20 {
+            let mut computer = Computer::new(example);
+            computer.provide_input([input]);
+            let out = computer.collect_outputs::<Vec<_>>().unwrap();
+
+            assert_eq!(out.len(), 1);
+            let expect = 1000 + input.cmp(&8) as Word;
+            assert_eq!(out[0], expect);
+        }
+    }
 }

@@ -10,6 +10,10 @@ pub enum Opcode {
     Multiply = 2,
     Input = 3,
     Output = 4,
+    JumpIfTrue = 5,
+    JumpIfFalse = 6,
+    LessThan = 7,
+    Equals = 8,
     Halt = 99,
 }
 
@@ -17,7 +21,8 @@ impl Opcode {
     pub const fn parameter_count(self) -> usize {
         match self {
             Opcode::Input | Opcode::Output => 1,
-            Opcode::Add | Opcode::Multiply => 3,
+            Opcode::JumpIfTrue | Opcode::JumpIfFalse => 2,
+            Opcode::Add | Opcode::Multiply | Opcode::LessThan | Opcode::Equals => 3,
             Opcode::Halt => 0,
         }
     }
