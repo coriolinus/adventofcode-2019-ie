@@ -53,7 +53,7 @@ dependencies = [
 [[package]]
 name = "aoclib"
 version = "0.1.0"
-source = "git+https://github.com/coriolinus/aoclib.git#124fa4ee392ed024cff0457b0252fbfffd2eeb51"
+source = "git+https://github.com/coriolinus/aoclib.git#750c7d1f6263e39605df9e17bb8d27be6064db1d"
 dependencies = [
  "bitvec",
  "dirs",
@@ -288,6 +288,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "crossbeam-channel"
+version = "0.5.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a33c2bf77f2df06183c3aa30d1e96c0695a313d4f9c453cc3762a6db39f99200"
+dependencies = [
+ "cfg-if",
+ "crossbeam-utils",
+]
+
+[[package]]
+name = "crossbeam-utils"
+version = "0.8.16"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5a22b2d63d4d1dc0b7f1b6b2747dd0088008a9be28b6ddf0b1e7d335e3037294"
+dependencies = [
+ "cfg-if",
+]
+
+[[package]]
 name = "darling"
 version = "0.20.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -324,6 +343,17 @@ dependencies = [
 
 [[package]]
 name = "day02"
+version = "0.1.0"
+dependencies = [
+ "aoclib",
+ "color-eyre",
+ "intcode",
+ "structopt",
+ "thiserror",
+]
+
+[[package]]
+name = "day05"
 version = "0.1.0"
 dependencies = [
  "aoclib",
@@ -765,6 +795,7 @@ dependencies = [
 name = "intcode"
 version = "0.1.0"
 dependencies = [
+ "crossbeam-channel",
  "derive_more",
  "strum",
  "thiserror",
@@ -974,6 +1005,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4161fcb6d602d4d2081af7c3a45852d875a03dd337a6bfdd6e06407b61342a43"
 dependencies = [
  "hermit-abi 0.3.3",
+ "libc",
+]
+
+[[package]]
+name = "num_threads"
+version = "0.1.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2819ce041d2ee131036f4fc9d6ae7ae125a3a40e97ba64d04fe799ad9dabbb44"
+dependencies = [
  "libc",
 ]
 
@@ -1667,6 +1707,8 @@ checksum = "c4a34ab300f2dee6e562c10a046fc05e358b29f9bf92277f30c3c8d82275f6f5"
 dependencies = [
  "deranged",
  "itoa",
+ "libc",
+ "num_threads",
  "powerfmt",
  "serde",
  "time-core",
