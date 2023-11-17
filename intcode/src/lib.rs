@@ -1,4 +1,4 @@
-type Int = i64;
+pub type Int = i64;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy, strum::FromRepr)]
 #[repr(u8)]
@@ -151,6 +151,10 @@ impl Computer {
                 Err(err) => return Err(err),
             }
         }
+    }
+
+    pub fn into_memory(self) -> Vec<Int> {
+        self.memory.0
     }
 }
 
