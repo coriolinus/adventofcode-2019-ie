@@ -1,10 +1,17 @@
 use crate::{
-    error::Error, error::Result, mem_idx::MemIdx as _, memory::Memory, opcode::Opcode, Word,
+    error::Error,
+    error::Result,
+    instruction::{Instruction, ParameterModes},
+    mem_idx::MemIdx as _,
+    memory::Memory,
+    opcode::Opcode,
+    parameters::Parameters,
+    Word,
 };
 
 pub struct Computer {
-    memory: Memory,
-    instruction_pointer: usize,
+    pub(crate) memory: Memory,
+    pub(crate) instruction_pointer: usize,
 }
 
 impl Computer {
@@ -15,10 +22,12 @@ impl Computer {
         }
     }
 
-    /// Get `N` parameters for the current instruction.
+    /// Get `N` raw parameters for the current instruction.
+    ///
+    /// This means that we have not yet applied the parameter modes to the parameters.
     ///
     /// Does not advance the instruction pointer.
-    fn parameters<const N: usize>(&self) -> Result<[Word; N]> {
+    pub(crate) fn raw_parameters<const N: usize>(&self) -> Result<[Word; N]> {
         let low = self.instruction_pointer + 1;
         let high = low + N;
         let slice = self.memory.get(low..high).ok_or(Error::Underflow {
@@ -27,31 +36,30 @@ impl Computer {
         })?;
         Ok(slice
             .try_into()
-            .expect("`fn operands()` produces an appropriately sized slice"))
+            .expect("`fn raw_parameters()` produces an appropriately sized slice"))
+    }
+
+    pub(crate) fn parameters<'a, P>(&'a mut self, modes: ParameterModes) -> Result<P>
+    where
+        P: Parameters<'a>,
+    {
+        P::apply(self, modes)
     }
 
     /// Execute the opcode at the current instruction pointer.
     ///
     /// If the instruction succeeded, increment the instruction pointer appropriately.
     /// Otherwise, leave it, for debugging purposes.
-    fn step(&mut self) -> Result<()> {
-        let opcode: Opcode = self.memory.ix(self.instruction_pointer)?.try_into()?;
-        let result = match opcode {
+    pub(crate) fn step(&mut self) -> Result<()> {
+        let instruction: Instruction = self.memory.ix(self.instruction_pointer)?.try_into()?;
+        let result = match instruction.opcode {
             Opcode::Add => {
-                let [ai, bi, outi] = self.parameters()?;
-                let a = self.memory.ix(ai)?;
-                let b = self.memory.ix(bi)?;
-                let out = self.memory.ix_mut(outi)?;
-
+                let (a, b, out): (_, _, &mut _) = self.parameters(instruction.modes)?;
                 *out = a + b;
                 Ok(())
             }
             Opcode::Multiply => {
-                let [ai, bi, outi] = self.parameters()?;
-                let a = self.memory.ix(ai)?;
-                let b = self.memory.ix(bi)?;
-                let out = self.memory.ix_mut(outi)?;
-
+                let (a, b, out): (_, _, &mut _) = self.parameters(instruction.modes)?;
                 *out = a * b;
                 Ok(())
             }
@@ -59,7 +67,7 @@ impl Computer {
         };
 
         if result.is_ok() {
-            self.instruction_pointer += 1 + opcode.parameter_count();
+            self.instruction_pointer += 1 + instruction.opcode.parameter_count();
         }
 
         result

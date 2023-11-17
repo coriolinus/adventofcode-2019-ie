@@ -1,8 +1,11 @@
 mod computer;
 mod error;
+mod instruction;
 mod mem_idx;
 mod memory;
 mod opcode;
+mod parameter_mode;
+mod parameters;
 
 pub use computer::Computer;
 pub use error::Error;
@@ -19,5 +22,13 @@ mod tests {
         let mut computer = Computer::new(example);
         computer.run().unwrap();
         assert_eq!(computer.into_memory()[0], 3500);
+    }
+
+    #[test]
+    fn day05_example() {
+        let example = [1002, 4, 3, 4, 33];
+        let mut computer = Computer::new(example);
+        computer.step().unwrap();
+        assert_eq!(computer.into_memory()[4], 99);
     }
 }
