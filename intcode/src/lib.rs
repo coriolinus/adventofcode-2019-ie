@@ -1,4 +1,4 @@
-pub type Int = i64;
+pub type Word = i64;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy, strum::FromRepr)]
 #[repr(u8)]
@@ -17,10 +17,10 @@ impl Opcode {
     }
 }
 
-impl TryFrom<Int> for Opcode {
+impl TryFrom<Word> for Opcode {
     type Error = Error;
 
-    fn try_from(value: Int) -> Result<Self> {
+    fn try_from(value: Word) -> Result<Self> {
         value
             .try_into()
             .ok()
@@ -30,28 +30,28 @@ impl TryFrom<Int> for Opcode {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, derive_more::From, derive_more::Into)]
-pub struct Memory(Vec<Int>);
+pub struct Memory(Vec<Word>);
 
-impl From<&[Int]> for Memory {
-    fn from(value: &[Int]) -> Self {
+impl From<&[Word]> for Memory {
+    fn from(value: &[Word]) -> Self {
         Self(value.to_owned())
     }
 }
 
-impl<const N: usize> From<[Int; N]> for Memory {
-    fn from(value: [Int; N]) -> Self {
+impl<const N: usize> From<[Word; N]> for Memory {
+    fn from(value: [Word; N]) -> Self {
         Self(value.into())
     }
 }
 
 trait MemIdx<Idx> {
-    fn get(&self, idx: Idx) -> Result<Int>;
-    fn get_mut(&mut self, idx: Idx) -> Result<&mut Int>;
+    fn get(&self, idx: Idx) -> Result<Word>;
+    fn get_mut(&mut self, idx: Idx) -> Result<&mut Word>;
 }
 
 impl MemIdx<usize> for Memory {
     #[inline]
-    fn get(&self, idx: usize) -> Result<Int> {
+    fn get(&self, idx: usize) -> Result<Word> {
         self.0.get(idx).copied().ok_or(Error::Underflow {
             idx,
             len: self.0.len(),
@@ -59,21 +59,21 @@ impl MemIdx<usize> for Memory {
     }
 
     #[inline]
-    fn get_mut(&mut self, idx: usize) -> Result<&mut Int> {
+    fn get_mut(&mut self, idx: usize) -> Result<&mut Word> {
         let len = self.0.len();
         self.0.get_mut(idx).ok_or(Error::Underflow { idx, len })
     }
 }
 
-impl MemIdx<Int> for Memory {
+impl MemIdx<Word> for Memory {
     #[inline]
-    fn get(&self, idx: Int) -> Result<Int> {
+    fn get(&self, idx: Word) -> Result<Word> {
         let idx: usize = idx.try_into().map_err(|_| Error::IndexFailed(idx))?;
         self.get(idx)
     }
 
     #[inline]
-    fn get_mut(&mut self, idx: Int) -> Result<&mut Int> {
+    fn get_mut(&mut self, idx: Word) -> Result<&mut Word> {
         let idx: usize = idx.try_into().map_err(|_| Error::IndexFailed(idx))?;
         self.get_mut(idx)
     }
@@ -95,7 +95,7 @@ impl Computer {
     /// Get `N` parameters for the current instruction.
     ///
     /// Does not advance the instruction pointer.
-    fn parameters<const N: usize>(&self) -> Result<[Int; N]> {
+    fn parameters<const N: usize>(&self) -> Result<[Word; N]> {
         let low = self.instruction_pointer + 1;
         let high = low + N;
         let slice = self.memory.0.get(low..high).ok_or(Error::Underflow {
@@ -153,7 +153,7 @@ impl Computer {
         }
     }
 
-    pub fn into_memory(self) -> Vec<Int> {
+    pub fn into_memory(self) -> Vec<Word> {
         self.memory.0
     }
 }
@@ -163,11 +163,11 @@ type Result<T, E = Error> = std::result::Result<T, E>;
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("unknown opcode: `{0}`")]
-    UnknownOpcode(Int),
+    UnknownOpcode(Word),
     #[error("attempted to read position {idx} but length is {len}")]
     Underflow { idx: usize, len: usize },
     #[error("failed to convert `Int` value ({0}) to `usize` for indexing")]
-    IndexFailed(Int),
+    IndexFailed(Word),
     #[error("encountered Halt opcode at instruction pointer `{0}`")]
     Halt(usize),
 }
