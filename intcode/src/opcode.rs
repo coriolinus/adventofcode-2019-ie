@@ -8,12 +8,15 @@ use crate::{
 pub enum Opcode {
     Add = 1,
     Multiply = 2,
+    Input = 3,
+    Output = 4,
     Halt = 99,
 }
 
 impl Opcode {
     pub const fn parameter_count(self) -> usize {
         match self {
+            Opcode::Input | Opcode::Output => 1,
             Opcode::Add | Opcode::Multiply => 3,
             Opcode::Halt => 0,
         }

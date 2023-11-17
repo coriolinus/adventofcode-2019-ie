@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crossbeam_channel::{Receiver, Sender};
 
 use crate::{
@@ -21,6 +23,8 @@ pub struct Computer {
 }
 
 impl Computer {
+    const CHANNEL_TIMEOUT: Duration = Duration::from_secs(1);
+
     pub fn new(program: impl Into<Memory>) -> Self {
         let (input_tx, input_rx) = crossbeam_channel::bounded(0);
         let (output_tx, output_rx) = crossbeam_channel::bounded(0);
@@ -75,6 +79,22 @@ impl Computer {
                 *out = a * b;
                 Ok(())
             }
+            Opcode::Input => {
+                let value = self
+                    .input_rx
+                    .recv_timeout(Self::CHANNEL_TIMEOUT)
+                    .map_err(|_| Error::InputTimeout)?;
+                let store: &mut _ = self.parameters(instruction.modes)?;
+                *store = value;
+                Ok(())
+            }
+            Opcode::Output => {
+                let value = self.parameters(instruction.modes)?;
+                self.output_tx
+                    .send_timeout(value, Self::CHANNEL_TIMEOUT)
+                    .map_err(|_| Error::OutputTimeout)?;
+                Ok(())
+            }
             Opcode::Halt => Err(Error::Halt(self.instruction_pointer)),
         };
 
@@ -86,14 +106,27 @@ impl Computer {
     }
 
     /// Execute the contained program until completion.
+    ///
+    /// This drops the output sender on completion, for synchronization.
     pub fn run(&mut self) -> Result<()> {
-        loop {
-            match self.step() {
-                Ok(()) => {}
-                Err(Error::Halt(_)) => return Ok(()),
-                Err(err) => return Err(err),
+        fn inner(computer: &mut Computer) -> Result<()> {
+            loop {
+                match computer.step() {
+                    Ok(()) => {}
+                    Err(Error::Halt(_)) => return Ok(()),
+                    Err(err) => return Err(err),
+                }
             }
         }
+        let output = inner(self);
+
+        // for synchronization purposes, we have to replace the output channel now.
+        let (tx, rx) = crossbeam_channel::bounded(0);
+        self.output_tx = tx;
+        self.output_rx = rx;
+
+        // now return the output
+        output
     }
 
     pub fn into_memory(self) -> Vec<Word> {
@@ -134,6 +167,9 @@ impl Computer {
     /// Collect all outputs from the output channel.
     ///
     /// This function implicitly runs `Self` to completion.
+    ///
+    /// NOTE: if there are external receivers defined on the output channel,
+    /// the collected outputs will become nondeterministic.
     pub fn collect_outputs<Collection>(&mut self) -> Result<Collection>
     where
         Collection: Default + Extend<Word> + Send,

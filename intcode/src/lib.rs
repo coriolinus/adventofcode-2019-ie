@@ -31,4 +31,16 @@ mod tests {
         computer.step().unwrap();
         assert_eq!(computer.into_memory()[4], 99);
     }
+
+    #[test]
+    fn day05_example_io() {
+        let example = [3, 0, 4, 0, 99];
+        let mut computer = Computer::new(example);
+
+        computer.provide_input([123]);
+        let out = computer.collect_outputs::<Vec<_>>().unwrap();
+
+        assert_eq!(out.len(), 1);
+        assert_eq!(out[0], 123);
+    }
 }

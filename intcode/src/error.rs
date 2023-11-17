@@ -16,4 +16,8 @@ pub enum Error {
     Halt(usize),
     #[error("attempted write to parameter in immediate mode")]
     ImmediateWrite,
+    #[error("timeout while waiting for input")]
+    InputTimeout,
+    #[error("timeout while attempting to send output")]
+    OutputTimeout,
 }
