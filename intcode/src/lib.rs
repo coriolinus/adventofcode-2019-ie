@@ -9,7 +9,7 @@ pub enum Opcode {
 }
 
 impl Opcode {
-    const fn operands(self) -> usize {
+    const fn parameter_count(self) -> usize {
         match self {
             Opcode::Add | Opcode::Multiply => 3,
             Opcode::Halt => 0,
@@ -92,10 +92,10 @@ impl Computer {
         }
     }
 
-    /// Get `N` operands for the current instruction.
+    /// Get `N` parameters for the current instruction.
     ///
     /// Does not advance the instruction pointer.
-    fn operands<const N: usize>(&self) -> Result<[Int; N]> {
+    fn parameters<const N: usize>(&self) -> Result<[Int; N]> {
         let low = self.instruction_pointer + 1;
         let high = low + N;
         let slice = self.memory.0.get(low..high).ok_or(Error::Underflow {
@@ -115,7 +115,7 @@ impl Computer {
         let opcode: Opcode = self.memory.get(self.instruction_pointer)?.try_into()?;
         let result = match opcode {
             Opcode::Add => {
-                let [ai, bi, outi] = self.operands()?;
+                let [ai, bi, outi] = self.parameters()?;
                 let a = self.memory.get(ai)?;
                 let b = self.memory.get(bi)?;
                 let out = self.memory.get_mut(outi)?;
@@ -124,7 +124,7 @@ impl Computer {
                 Ok(())
             }
             Opcode::Multiply => {
-                let [ai, bi, outi] = self.operands()?;
+                let [ai, bi, outi] = self.parameters()?;
                 let a = self.memory.get(ai)?;
                 let b = self.memory.get(bi)?;
                 let out = self.memory.get_mut(outi)?;
@@ -136,7 +136,7 @@ impl Computer {
         };
 
         if result.is_ok() {
-            self.instruction_pointer += 1 + opcode.operands();
+            self.instruction_pointer += 1 + opcode.parameter_count();
         }
 
         result
