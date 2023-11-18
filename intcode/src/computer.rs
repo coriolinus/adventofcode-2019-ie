@@ -16,6 +16,7 @@ use crate::{
 pub struct Computer<const CHANNEL_BUFFER: usize = 0> {
     pub(crate) memory: Memory,
     pub(crate) instruction_pointer: usize,
+    pub(crate) relative_base: Word,
     input_tx: Sender<Word>,
     input_rx: Receiver<Word>,
     output_tx: Sender<Word>,
@@ -40,6 +41,7 @@ impl<const CHANNEL_BUFFER: usize> Computer<CHANNEL_BUFFER> {
         Self {
             memory: program.into(),
             instruction_pointer: 0,
+            relative_base: 0,
             input_tx,
             input_rx,
             output_tx,

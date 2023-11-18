@@ -3,6 +3,40 @@ use crate::{
     parameter_mode::ParameterMode, Computer, Error, Word,
 };
 
+fn pick_param<const CB: usize, const PC: usize>(
+    computer: &Computer<CB>,
+    modes: ParameterModes,
+    raw: [Word; PC],
+    idx: usize,
+) -> Result<Word> {
+    let param = match modes[idx] {
+        ParameterMode::Position => computer.memory.ix(raw[idx])?,
+        ParameterMode::Immediate => raw[idx],
+        ParameterMode::Relative => {
+            let addr = raw[idx] + computer.relative_base;
+            computer.memory.ix(addr)?
+        }
+    };
+    Ok(param)
+}
+
+fn pick_param_mut<const CB: usize, const PC: usize>(
+    computer: &mut Computer<CB>,
+    modes: ParameterModes,
+    raw: [Word; PC],
+    idx: usize,
+) -> Result<&mut Word> {
+    let param = match modes[idx] {
+        ParameterMode::Position => computer.memory.ix_mut(raw[idx])?,
+        ParameterMode::Relative => {
+            let addr = raw[idx] + computer.relative_base;
+            computer.memory.ix_mut(addr)?
+        }
+        ParameterMode::Immediate => return Err(Error::ImmediateWrite),
+    };
+    Ok(param)
+}
+
 pub(crate) trait Parameters<'a>: Sized {
     fn apply<const CB: usize>(
         computer: &'a mut Computer<CB>,
@@ -44,11 +78,10 @@ impl<'a> Parameters<'a> for (Word,) {
         modes: ParameterModes,
     ) -> Result<Self> {
         let raw = computer.raw_parameters::<1>()?;
-        let i0 = match modes[0] {
-            ParameterMode::Position => computer.memory.ix(raw[0])?,
-            ParameterMode::Immediate => raw[0],
-        };
-        Ok((i0,))
+
+        let val0 = pick_param::<CB, 1>(computer, modes, raw, 0)?;
+
+        Ok((val0,))
     }
 }
 
@@ -58,15 +91,11 @@ impl<'a> Parameters<'a> for (Word, Word) {
         modes: ParameterModes,
     ) -> Result<Self> {
         let raw = computer.raw_parameters::<2>()?;
-        let v0 = match modes[0] {
-            ParameterMode::Position => computer.memory.ix(raw[0])?,
-            ParameterMode::Immediate => raw[0],
-        };
-        let v1 = match modes[1] {
-            ParameterMode::Position => computer.memory.ix(raw[1])?,
-            ParameterMode::Immediate => raw[1],
-        };
-        Ok((v0, v1))
+
+        let val0 = pick_param::<CB, 2>(computer, modes, raw, 0)?;
+        let val1 = pick_param::<CB, 2>(computer, modes, raw, 1)?;
+
+        Ok((val0, val1))
     }
 }
 
@@ -76,19 +105,12 @@ impl<'a> Parameters<'a> for (Word, Word, Word) {
         modes: ParameterModes,
     ) -> Result<Self> {
         let raw = computer.raw_parameters::<3>()?;
-        let v0 = match modes[0] {
-            ParameterMode::Position => computer.memory.ix(raw[0])?,
-            ParameterMode::Immediate => raw[0],
-        };
-        let v1 = match modes[1] {
-            ParameterMode::Position => computer.memory.ix(raw[1])?,
-            ParameterMode::Immediate => raw[1],
-        };
-        let v2 = match modes[2] {
-            ParameterMode::Position => computer.memory.ix(raw[2])?,
-            ParameterMode::Immediate => raw[2],
-        };
-        Ok((v0, v1, v2))
+
+        let val0 = pick_param::<CB, 3>(computer, modes, raw, 0)?;
+        let val1 = pick_param::<CB, 3>(computer, modes, raw, 1)?;
+        let val2 = pick_param::<CB, 3>(computer, modes, raw, 2)?;
+
+        Ok((val0, val1, val2))
     }
 }
 
@@ -98,23 +120,13 @@ impl<'a> Parameters<'a> for (Word, Word, Word, Word) {
         modes: ParameterModes,
     ) -> Result<Self> {
         let raw = computer.raw_parameters::<4>()?;
-        let v0 = match modes[0] {
-            ParameterMode::Position => computer.memory.ix(raw[0])?,
-            ParameterMode::Immediate => raw[0],
-        };
-        let v1 = match modes[1] {
-            ParameterMode::Position => computer.memory.ix(raw[1])?,
-            ParameterMode::Immediate => raw[1],
-        };
-        let v2 = match modes[2] {
-            ParameterMode::Position => computer.memory.ix(raw[2])?,
-            ParameterMode::Immediate => raw[2],
-        };
-        let v3 = match modes[3] {
-            ParameterMode::Position => computer.memory.ix(raw[3])?,
-            ParameterMode::Immediate => raw[3],
-        };
-        Ok((v0, v1, v2, v3))
+
+        let val0 = pick_param::<CB, 4>(computer, modes, raw, 0)?;
+        let val1 = pick_param::<CB, 4>(computer, modes, raw, 1)?;
+        let val2 = pick_param::<CB, 4>(computer, modes, raw, 2)?;
+        let val3 = pick_param::<CB, 4>(computer, modes, raw, 3)?;
+
+        Ok((val0, val1, val2, val3))
     }
 }
 
@@ -124,11 +136,10 @@ impl<'a> Parameters<'a> for (&'a mut Word,) {
         modes: ParameterModes,
     ) -> Result<Self> {
         let raw = computer.raw_parameters::<1>()?;
-        let i0 = match modes[0] {
-            ParameterMode::Position => computer.memory.ix_mut(raw[0])?,
-            ParameterMode::Immediate => return Err(Error::ImmediateWrite),
-        };
-        Ok((i0,))
+
+        let val0 = pick_param_mut::<CB, 1>(computer, modes, raw, 0)?;
+
+        Ok((val0,))
     }
 }
 
@@ -138,15 +149,11 @@ impl<'a> Parameters<'a> for (Word, &'a mut Word) {
         modes: ParameterModes,
     ) -> Result<Self> {
         let raw = computer.raw_parameters::<2>()?;
-        let v0 = match modes[0] {
-            ParameterMode::Position => computer.memory.ix(raw[0])?,
-            ParameterMode::Immediate => raw[0],
-        };
-        let v1 = match modes[1] {
-            ParameterMode::Position => computer.memory.ix_mut(raw[1])?,
-            ParameterMode::Immediate => return Err(Error::ImmediateWrite),
-        };
-        Ok((v0, v1))
+
+        let val0 = pick_param::<CB, 2>(computer, modes, raw, 0)?;
+        let val1 = pick_param_mut::<CB, 2>(computer, modes, raw, 1)?;
+
+        Ok((val0, val1))
     }
 }
 
@@ -156,19 +163,12 @@ impl<'a> Parameters<'a> for (Word, Word, &'a mut Word) {
         modes: ParameterModes,
     ) -> Result<Self> {
         let raw = computer.raw_parameters::<3>()?;
-        let v0 = match modes[0] {
-            ParameterMode::Position => computer.memory.ix(raw[0])?,
-            ParameterMode::Immediate => raw[0],
-        };
-        let v1 = match modes[1] {
-            ParameterMode::Position => computer.memory.ix(raw[1])?,
-            ParameterMode::Immediate => raw[1],
-        };
-        let v2 = match modes[2] {
-            ParameterMode::Position => computer.memory.ix_mut(raw[2])?,
-            ParameterMode::Immediate => return Err(Error::ImmediateWrite),
-        };
-        Ok((v0, v1, v2))
+
+        let val0 = pick_param::<CB, 3>(computer, modes, raw, 0)?;
+        let val1 = pick_param::<CB, 3>(computer, modes, raw, 1)?;
+        let val2 = pick_param_mut::<CB, 3>(computer, modes, raw, 2)?;
+
+        Ok((val0, val1, val2))
     }
 }
 
@@ -178,22 +178,12 @@ impl<'a> Parameters<'a> for (Word, Word, Word, &'a mut Word) {
         modes: ParameterModes,
     ) -> Result<Self> {
         let raw = computer.raw_parameters::<4>()?;
-        let v0 = match modes[0] {
-            ParameterMode::Position => computer.memory.ix(raw[0])?,
-            ParameterMode::Immediate => raw[0],
-        };
-        let v1 = match modes[1] {
-            ParameterMode::Position => computer.memory.ix(raw[1])?,
-            ParameterMode::Immediate => raw[1],
-        };
-        let v2 = match modes[2] {
-            ParameterMode::Position => computer.memory.ix(raw[2])?,
-            ParameterMode::Immediate => raw[2],
-        };
-        let v3 = match modes[3] {
-            ParameterMode::Position => computer.memory.ix_mut(raw[3])?,
-            ParameterMode::Immediate => return Err(Error::ImmediateWrite),
-        };
-        Ok((v0, v1, v2, v3))
+
+        let val0 = pick_param::<CB, 4>(computer, modes, raw, 0)?;
+        let val1 = pick_param::<CB, 4>(computer, modes, raw, 1)?;
+        let val2 = pick_param::<CB, 4>(computer, modes, raw, 2)?;
+        let val3 = pick_param_mut::<CB, 4>(computer, modes, raw, 3)?;
+
+        Ok((val0, val1, val2, val3))
     }
 }
