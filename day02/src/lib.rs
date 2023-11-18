@@ -6,7 +6,7 @@ fn execute(program: &[Word], noun: Word, verb: Word) -> Result<Word, Error> {
     let mut program = program.to_owned();
     program[1] = noun;
     program[2] = verb;
-    let mut computer = Computer::new(program);
+    let mut computer = Computer::<0>::new(program);
     computer.run()?;
     Ok(computer.into_memory()[0])
 }

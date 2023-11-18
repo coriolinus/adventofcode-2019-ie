@@ -3,7 +3,7 @@ use intcode::{Computer, Word};
 use std::{ops::Deref, path::Path};
 
 fn get_diagnostic_code(program: Vec<Word>, device_id: Word) -> Result<Word, Error> {
-    let mut computer = Computer::new(program);
+    let mut computer = Computer::<0>::new(program);
 
     computer.provide_input([device_id]);
     let outputs = computer.collect_outputs::<Vec<_>>()?;
