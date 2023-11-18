@@ -125,6 +125,11 @@ impl<const CHANNEL_BUFFER: usize> Computer<CHANNEL_BUFFER> {
                 *out = if a == b { 1 } else { 0 };
                 None
             }
+            Opcode::RelativeBaseOffset => {
+                let adjust: Word = self.parameters(instruction.modes)?;
+                self.relative_base += adjust;
+                None
+            }
         };
 
         match next_ip {

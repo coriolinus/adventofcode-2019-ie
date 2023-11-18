@@ -14,16 +14,17 @@ pub enum Opcode {
     JumpIfFalse = 6,
     LessThan = 7,
     Equals = 8,
+    RelativeBaseOffset = 9,
     Halt = 99,
 }
 
 impl Opcode {
     pub const fn parameter_count(self) -> usize {
         match self {
-            Opcode::Input | Opcode::Output => 1,
+            Opcode::Halt => 0,
+            Opcode::Input | Opcode::Output | Opcode::RelativeBaseOffset => 1,
             Opcode::JumpIfTrue | Opcode::JumpIfFalse => 2,
             Opcode::Add | Opcode::Multiply | Opcode::LessThan | Opcode::Equals => 3,
-            Opcode::Halt => 0,
         }
     }
 }
