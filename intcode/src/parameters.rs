@@ -4,30 +4,45 @@ use crate::{
 };
 
 pub(crate) trait Parameters<'a>: Sized {
-    fn apply(computer: &'a mut Computer, modes: ParameterModes) -> Result<Self>;
+    fn apply<const CB: usize>(
+        computer: &'a mut Computer<CB>,
+        modes: ParameterModes,
+    ) -> Result<Self>;
 }
 
 impl<'a> Parameters<'a> for Word {
-    fn apply(computer: &'a mut Computer, modes: ParameterModes) -> Result<Self> {
+    fn apply<const CB: usize>(
+        computer: &'a mut Computer<CB>,
+        modes: ParameterModes,
+    ) -> Result<Self> {
         <(Word,)>::apply(computer, modes).map(|word_tuple| word_tuple.0)
     }
 }
 
 impl<'a> Parameters<'a> for &'a mut Word {
-    fn apply(computer: &'a mut Computer, modes: ParameterModes) -> Result<Self> {
+    fn apply<const CB: usize>(
+        computer: &'a mut Computer<CB>,
+        modes: ParameterModes,
+    ) -> Result<Self> {
         <(&mut Word,)>::apply(computer, modes).map(|word_tuple| word_tuple.0)
     }
 }
 
 impl<'a> Parameters<'a> for () {
-    fn apply(computer: &'a mut Computer, _modes: ParameterModes) -> Result<Self> {
+    fn apply<const CB: usize>(
+        computer: &'a mut Computer<CB>,
+        _modes: ParameterModes,
+    ) -> Result<Self> {
         let _raw = computer.raw_parameters::<0>()?;
         Ok(())
     }
 }
 
 impl<'a> Parameters<'a> for (Word,) {
-    fn apply(computer: &'a mut Computer, modes: ParameterModes) -> Result<Self> {
+    fn apply<const CB: usize>(
+        computer: &'a mut Computer<CB>,
+        modes: ParameterModes,
+    ) -> Result<Self> {
         let raw = computer.raw_parameters::<1>()?;
         let i0 = match modes[0] {
             ParameterMode::Position => computer.memory.ix(raw[0])?,
@@ -38,7 +53,10 @@ impl<'a> Parameters<'a> for (Word,) {
 }
 
 impl<'a> Parameters<'a> for (Word, Word) {
-    fn apply(computer: &'a mut Computer, modes: ParameterModes) -> Result<Self> {
+    fn apply<const CB: usize>(
+        computer: &'a mut Computer<CB>,
+        modes: ParameterModes,
+    ) -> Result<Self> {
         let raw = computer.raw_parameters::<2>()?;
         let v0 = match modes[0] {
             ParameterMode::Position => computer.memory.ix(raw[0])?,
@@ -53,7 +71,10 @@ impl<'a> Parameters<'a> for (Word, Word) {
 }
 
 impl<'a> Parameters<'a> for (Word, Word, Word) {
-    fn apply(computer: &'a mut Computer, modes: ParameterModes) -> Result<Self> {
+    fn apply<const CB: usize>(
+        computer: &'a mut Computer<CB>,
+        modes: ParameterModes,
+    ) -> Result<Self> {
         let raw = computer.raw_parameters::<3>()?;
         let v0 = match modes[0] {
             ParameterMode::Position => computer.memory.ix(raw[0])?,
@@ -72,7 +93,10 @@ impl<'a> Parameters<'a> for (Word, Word, Word) {
 }
 
 impl<'a> Parameters<'a> for (Word, Word, Word, Word) {
-    fn apply(computer: &'a mut Computer, modes: ParameterModes) -> Result<Self> {
+    fn apply<const CB: usize>(
+        computer: &'a mut Computer<CB>,
+        modes: ParameterModes,
+    ) -> Result<Self> {
         let raw = computer.raw_parameters::<4>()?;
         let v0 = match modes[0] {
             ParameterMode::Position => computer.memory.ix(raw[0])?,
@@ -95,7 +119,10 @@ impl<'a> Parameters<'a> for (Word, Word, Word, Word) {
 }
 
 impl<'a> Parameters<'a> for (&'a mut Word,) {
-    fn apply(computer: &'a mut Computer, modes: ParameterModes) -> Result<Self> {
+    fn apply<const CB: usize>(
+        computer: &'a mut Computer<CB>,
+        modes: ParameterModes,
+    ) -> Result<Self> {
         let raw = computer.raw_parameters::<1>()?;
         let i0 = match modes[0] {
             ParameterMode::Position => computer.memory.ix_mut(raw[0])?,
@@ -106,7 +133,10 @@ impl<'a> Parameters<'a> for (&'a mut Word,) {
 }
 
 impl<'a> Parameters<'a> for (Word, &'a mut Word) {
-    fn apply(computer: &'a mut Computer, modes: ParameterModes) -> Result<Self> {
+    fn apply<const CB: usize>(
+        computer: &'a mut Computer<CB>,
+        modes: ParameterModes,
+    ) -> Result<Self> {
         let raw = computer.raw_parameters::<2>()?;
         let v0 = match modes[0] {
             ParameterMode::Position => computer.memory.ix(raw[0])?,
@@ -121,7 +151,10 @@ impl<'a> Parameters<'a> for (Word, &'a mut Word) {
 }
 
 impl<'a> Parameters<'a> for (Word, Word, &'a mut Word) {
-    fn apply(computer: &'a mut Computer, modes: ParameterModes) -> Result<Self> {
+    fn apply<const CB: usize>(
+        computer: &'a mut Computer<CB>,
+        modes: ParameterModes,
+    ) -> Result<Self> {
         let raw = computer.raw_parameters::<3>()?;
         let v0 = match modes[0] {
             ParameterMode::Position => computer.memory.ix(raw[0])?,
@@ -140,7 +173,10 @@ impl<'a> Parameters<'a> for (Word, Word, &'a mut Word) {
 }
 
 impl<'a> Parameters<'a> for (Word, Word, Word, &'a mut Word) {
-    fn apply(computer: &'a mut Computer, modes: ParameterModes) -> Result<Self> {
+    fn apply<const CB: usize>(
+        computer: &'a mut Computer<CB>,
+        modes: ParameterModes,
+    ) -> Result<Self> {
         let raw = computer.raw_parameters::<4>()?;
         let v0 = match modes[0] {
             ParameterMode::Position => computer.memory.ix(raw[0])?,

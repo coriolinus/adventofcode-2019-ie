@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{fmt, time::Duration};
 
 use crossbeam_channel::{Receiver, Sender};
 
@@ -13,7 +13,7 @@ use crate::{
     Word,
 };
 
-pub struct Computer {
+pub struct Computer<const CHANNEL_BUFFER: usize = 0> {
     pub(crate) memory: Memory,
     pub(crate) instruction_pointer: usize,
     input_tx: Sender<Word>,
@@ -22,12 +22,21 @@ pub struct Computer {
     output_rx: Receiver<Word>,
 }
 
-impl Computer {
+impl<const CHANNEL_BUFFER: usize> fmt::Debug for Computer<CHANNEL_BUFFER> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Computer")
+            .field("memory", &format!("[...; {}]", self.memory.len()))
+            .field("instruction_pointer", &self.instruction_pointer)
+            .finish()
+    }
+}
+
+impl<const CHANNEL_BUFFER: usize> Computer<CHANNEL_BUFFER> {
     const CHANNEL_TIMEOUT: Duration = Duration::from_secs(1);
 
     pub fn new(program: impl Into<Memory>) -> Self {
-        let (input_tx, input_rx) = crossbeam_channel::bounded(0);
-        let (output_tx, output_rx) = crossbeam_channel::bounded(0);
+        let (input_tx, input_rx) = crossbeam_channel::bounded(CHANNEL_BUFFER);
+        let (output_tx, output_rx) = crossbeam_channel::bounded(CHANNEL_BUFFER);
         Self {
             memory: program.into(),
             instruction_pointer: 0,
@@ -131,7 +140,7 @@ impl Computer {
     ///
     /// This drops the output sender on completion, for synchronization.
     pub fn run(&mut self) -> Result<()> {
-        fn inner(computer: &mut Computer) -> Result<()> {
+        fn inner<const CB: usize>(computer: &mut Computer<CB>) -> Result<()> {
             loop {
                 match computer.step() {
                     Ok(()) => {}
@@ -143,7 +152,7 @@ impl Computer {
         let output = inner(self);
 
         // for synchronization purposes, we have to replace the output channel now.
-        let (tx, rx) = crossbeam_channel::bounded(0);
+        let (tx, rx) = crossbeam_channel::bounded(CHANNEL_BUFFER);
         self.output_tx = tx;
         self.output_rx = rx;
 
