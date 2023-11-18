@@ -107,7 +107,23 @@ pub fn part1(input: &Path) -> Result<(), Error> {
 }
 
 pub fn part2(input: &Path) -> Result<(), Error> {
-    unimplemented!("input file: {:?}", input)
+    for (idx, program) in parse::<CommaSep<Word>>(input)?.enumerate() {
+        let program = program.deref().as_ref();
+        let mut phase_settings = [5, 6, 7, 8, 9];
+        let heap = permutohedron::Heap::new(&mut phase_settings);
+        let Some((max_value, phase_settings)) = heap
+            .map(|phase_settings| {
+                let mut circuit = AmplificationCircuit::new(phase_settings, program);
+                let value = circuit.run(true).expect("does not fail to compute a value");
+                (value, phase_settings)
+            })
+            .max()
+        else {
+            return Err(Error::NoSolution);
+        };
+        println!("pgm {idx} pt 1: max value {max_value} with {phase_settings:?}");
+    }
+    Ok(())
 }
 
 #[derive(Debug, thiserror::Error)]
