@@ -84,24 +84,34 @@ impl AmplificationCircuit {
     }
 }
 
+fn find_max_value(
+    idx: usize,
+    part: u8,
+    program: &[Word],
+    phase_settings: &mut PhaseSettings,
+    recycle: bool,
+) -> Result<(), Error> {
+    let heap = permutohedron::Heap::new(phase_settings);
+    let Some((max_value, phase_settings)) = heap
+        .map(|phase_settings| {
+            let mut circuit = AmplificationCircuit::new(phase_settings, program);
+            let value = circuit
+                .run(recycle)
+                .expect("does not fail to compute a value");
+            (value, phase_settings)
+        })
+        .max()
+    else {
+        return Err(Error::NoSolution);
+    };
+    println!("pgm {idx} pt {part}: max value {max_value} with {phase_settings:?}");
+    Ok(())
+}
+
 pub fn part1(input: &Path) -> Result<(), Error> {
     for (idx, program) in parse::<CommaSep<Word>>(input)?.enumerate() {
         let program = program.deref().as_ref();
-        let mut phase_settings = [0, 1, 2, 3, 4];
-        let heap = permutohedron::Heap::new(&mut phase_settings);
-        let Some((max_value, phase_settings)) = heap
-            .map(|phase_settings| {
-                let mut circuit = AmplificationCircuit::new(phase_settings, program);
-                let value = circuit
-                    .run(false)
-                    .expect("does not fail to compute a value");
-                (value, phase_settings)
-            })
-            .max()
-        else {
-            return Err(Error::NoSolution);
-        };
-        println!("pgm {idx} pt 1: max value {max_value} with {phase_settings:?}");
+        find_max_value(idx, 1, program, &mut [0, 1, 2, 3, 4], false)?;
     }
     Ok(())
 }
@@ -109,19 +119,7 @@ pub fn part1(input: &Path) -> Result<(), Error> {
 pub fn part2(input: &Path) -> Result<(), Error> {
     for (idx, program) in parse::<CommaSep<Word>>(input)?.enumerate() {
         let program = program.deref().as_ref();
-        let mut phase_settings = [5, 6, 7, 8, 9];
-        let heap = permutohedron::Heap::new(&mut phase_settings);
-        let Some((max_value, phase_settings)) = heap
-            .map(|phase_settings| {
-                let mut circuit = AmplificationCircuit::new(phase_settings, program);
-                let value = circuit.run(true).expect("does not fail to compute a value");
-                (value, phase_settings)
-            })
-            .max()
-        else {
-            return Err(Error::NoSolution);
-        };
-        println!("pgm {idx} pt 1: max value {max_value} with {phase_settings:?}");
+        find_max_value(idx, 2, program, &mut [5, 6, 7, 8, 9], true)?;
     }
     Ok(())
 }
