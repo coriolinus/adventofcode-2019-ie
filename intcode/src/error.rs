@@ -8,8 +8,8 @@ pub enum Error {
     UnknownOpcode(Word),
     #[error("unknown parameter mode: `{0}`")]
     UnknownParameterMode(Word),
-    #[error("attempted to read position {idx} but length is {len}")]
-    Underflow { idx: usize, len: usize },
+    #[error("attempted to access position {idx} but max capacity is {len}")]
+    MemoryExhausted { idx: usize, len: usize },
     #[error("failed to convert `Int` value ({0}) to `usize` for indexing")]
     IndexFailed(Word),
     #[error("encountered Halt opcode at instruction pointer `{0}`")]

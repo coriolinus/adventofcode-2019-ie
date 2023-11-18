@@ -57,7 +57,7 @@ impl<const CHANNEL_BUFFER: usize> Computer<CHANNEL_BUFFER> {
     pub(crate) fn raw_parameters<const N: usize>(&self) -> Result<[Word; N]> {
         let low = self.instruction_pointer + 1;
         let high = low + N;
-        let slice = self.memory.get(low..high).ok_or(Error::Underflow {
+        let slice = self.memory.get(low..high).ok_or(Error::MemoryExhausted {
             idx: high,
             len: self.memory.len(),
         })?;

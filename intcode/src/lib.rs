@@ -62,4 +62,16 @@ mod tests {
             assert_eq!(out[0], expect);
         }
     }
+
+    #[test]
+    fn day09_quine_example() {
+        let program = [
+            109, 1, 204, -1, 1001, 100, 1, 100, 1008, 100, 16, 101, 1006, 101, 0, 99,
+        ];
+
+        let mut computer = Computer::<0>::new(program);
+        let out = computer.collect_outputs::<Vec<_>>().unwrap();
+
+        assert_eq!(program.as_slice(), &out);
+    }
 }

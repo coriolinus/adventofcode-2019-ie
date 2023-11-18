@@ -6,6 +6,8 @@ use crate::{
     Word,
 };
 
+const MEMORY_LIMIT: usize = 256 * 1024 * 1024; // 256 Mb
+
 #[derive(Debug, PartialEq, Eq, Clone, derive_more::From, derive_more::Into)]
 pub struct Memory(Vec<Word>);
 
@@ -38,16 +40,13 @@ impl DerefMut for Memory {
 impl MemIdx<usize> for Memory {
     #[inline]
     fn ix(&self, idx: usize) -> Result<Word> {
-        self.0.get(idx).copied().ok_or(Error::Underflow {
-            idx,
-            len: self.0.len(),
-        })
+        self.get(idx)
     }
 
     #[inline]
     fn ix_mut(&mut self, idx: usize) -> Result<&mut Word> {
-        let len = self.0.len();
-        self.0.get_mut(idx).ok_or(Error::Underflow { idx, len })
+        self.ensure_capacity(idx)?;
+        Ok(&mut self.0[idx])
     }
 }
 
@@ -61,6 +60,7 @@ impl MemIdx<Word> for Memory {
     #[inline]
     fn ix_mut(&mut self, idx: Word) -> Result<&mut Word> {
         let idx: usize = idx.try_into().map_err(|_| Error::IndexFailed(idx))?;
+        self.ensure_capacity(idx)?;
         self.ix_mut(idx)
     }
 }
@@ -68,5 +68,29 @@ impl MemIdx<Word> for Memory {
 impl Memory {
     pub fn into_inner(self) -> Vec<Word> {
         self.0
+    }
+
+    fn get(&self, idx: usize) -> Result<Word> {
+        if idx > MEMORY_LIMIT {
+            return Err(Error::MemoryExhausted {
+                idx,
+                len: MEMORY_LIMIT,
+            });
+        }
+        Ok(self.0.get(idx).copied().unwrap_or_default())
+    }
+
+    fn ensure_capacity(&mut self, idx: usize) -> Result<()> {
+        if idx >= self.len() {
+            if idx > MEMORY_LIMIT {
+                return Err(Error::MemoryExhausted {
+                    idx,
+                    len: MEMORY_LIMIT,
+                });
+            }
+            // eprintln!("reallocating from {} to {}", self.0.len(), idx + 1);
+            self.0.resize(idx + 1, Word::default());
+        }
+        Ok(())
     }
 }
